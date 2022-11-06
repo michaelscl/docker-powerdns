@@ -1,0 +1,56 @@
+version: '3'
+services:
+  recursor:
+    image: powerdns/pdns-recursor-48
+    container_name: pdns-recursor
+    hostname: recursor
+    environment:
+      - PDNS_RECURSOR_API_KEY
+    ports:
+      - "2053:53"
+      - "2053:53/udp"
+#      - "58082:8082"
+    volumes:
+      - ./recursor.d:/etc/powerdns/recursor.d
+    restart: unless-stopped
+
+  dnsdist:
+    image: powerdns/dnsdist-17
+    container_name: pdns-dnsdist
+    hostname: dnsdist
+    environment:
+      - DNSDIST_API_KEY
+    links:
+      - recursor
+      - auth
+    ports:
+      - "3053:53"
+      - "3053:53/udp"
+      - "5199:5199"
+#      - "58083:8083"
+    restart: unless-stopped
+
+  auth:
+    image: powerdns/pdns-auth-47
+    container_name: pdns-auth
+    hostname: auth
+    environment:
+      - PDNS_AUTH_API_KEY=12345678901234567890
+    ports:
+      - "1053:53"
+      - "1053:53/udp"
+#      - "58081:8081"
+    restart: unless-stopped
+
+  admin:
+    image: ngoduykhanh/powerdns-admin:latest
+    container_name: pdns-webadmin
+    hostname: webadmin
+    environment:
+      - SECRET_KEY='a-very-secret-key'
+    volumes:
+      - ./pda_data:/data
+    ports:
+      - "9191:80"
+    restart: unless-stopped
+
